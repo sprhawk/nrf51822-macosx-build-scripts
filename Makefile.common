@@ -151,7 +151,7 @@ w4 0x4001e504,2 # enable erase all \n\
 w4 0x4001e50c,1 # start erasing \n\
 sleep 1000 \n\
 r \n\
-qc \n\
+q \n\
   " \
     > $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink 
 
@@ -165,9 +165,14 @@ h \n\
 w4 0x4001e504,2 # enable erase \n\
 w4 0x4001e50c,1 # start erasing all \n\
 sleep 1000 \n\
-w4 0x10001000, 0x14000 \n\
+w4 0x4001e514,1 # start erasing UICR \n\
+sleep 500 \n\
+w4 0x10001000, 0x14000 # write code region size \n\
+sleep 1000 \n\
 w4 0x4001e504,1 \n\
+sleep 1000 \n\
 loadbin \"$(SOFTDEVICE_BIN_PATH)\", 0x0 \n\
+sleep 15000 \n\
 r \n\
 qc \n\
 " > $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink
