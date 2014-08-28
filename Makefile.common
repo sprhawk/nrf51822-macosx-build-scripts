@@ -16,13 +16,16 @@ ifeq ($(LINKER_SCRIPT),)
 	ifeq ($(USE_SOFTDEVICE), S110)
 		LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110_$(DEVICE_VARIANT).ld
 		OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s110_$(DEVICE_VARIANT)
+        STARTADDRESS = 0x14000
 	else
 		ifeq ($(USE_SOFTDEVICE), S210)
 			LINKER_SCRIPT = gcc_$(DEVICESERIES)_s210_$(DEVICE_VARIANT).ld
 			OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s210_$(DEVICE_VARIANT)
+            STARTADDRESS = 0x14000
 		else
 			LINKER_SCRIPT = gcc_$(DEVICESERIES)_blank_$(DEVICE_VARIANT).ld
 			OUTPUT_FILENAME := $(OUTPUT_FILENAME)_$(DEVICE_VARIANT)
+            STARTADDRESS = 0x0
 		endif
 	endif
 else
@@ -150,6 +153,8 @@ h \n\
 w4 0x4001e504,2 # enable erase all \n\
 w4 0x4001e50c,1 # start erasing \n\
 sleep 1000 \n\
+w4 0x4001e514,1 # start erasing UICR \n\
+sleep 500 \n\
 r \n\
 q \n\
   " \
@@ -191,7 +196,7 @@ h \n\
 w4 0x4001e504,2 # enable erase \n\
 " > $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
 	binsize=`stat -f %z $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin`;  \
-    starthexaddr=0x14000; \
+    starthexaddr=$(STARTADDRESS); \
 	startaddr=`printf "%d" $$starthexaddr`;  \
 	page=0;  \
 	while [ $$binsize -gt 0 ]; \
@@ -205,8 +210,8 @@ w4 0x4001e504,2 # enable erase \n\
 	echo "sleep 1000 \n\
 r \n\
 w4 0x4001e504,1  # enable write \n\
-loadbin \"$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin\", 0x14000 \n\
-verifybin \"$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin\", 0x14000 \n\
+loadbin \"$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin\", $(STARTADDRESS)\n\
+verifybin \"$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin\", $(STARTADDRESS)\n\
 r \n\
 g \n\
 qc \n\
