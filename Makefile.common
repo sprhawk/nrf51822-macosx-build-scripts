@@ -158,6 +158,9 @@ q \n\
 erase_all: $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink 
 	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink; [ "$$?" -eq 1 ]
 
+$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin: $(BUILD_DIRECTORIES)
+	$(OBJCOPY) -I ihex -O binary $(SOFTDEVICE_HEX_PATH) $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
+
 $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink: $(BUILD_DIRECTORIES)
 	echo " \n\
 r \n\
@@ -171,13 +174,14 @@ w4 0x10001000, 0x14000 # write code region size \n\
 sleep 1000 \n\
 w4 0x4001e504,1 \n\
 sleep 1000 \n\
-loadbin \"$(SOFTDEVICE_BIN_PATH)\", 0x0 \n\
-sleep 15000 \n\
+loadbin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\", 0x0 \n\
+verifybin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\", 0x0 \n\
 r \n\
 qc \n\
 " > $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink
 
-flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink
+
+flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
 	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink; [ "$$?" -eq 1 ]
 
 $(OUTPUT_BINARY_DIRECTORY)/flash.jlink: $(BUILD_DIRECTORIES) $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
