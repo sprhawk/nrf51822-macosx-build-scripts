@@ -1,0 +1,22 @@
+TARGET_CHIP := NRF51822_QFAA_CA
+BOARD := BOARD_PCA10001
+
+#Uncomment correct line if you have s110 programmed on the chip.
+DEVICE_VARIANT := xxaa
+#DEVICE_VARIANT := xxab
+
+USE_SOFTDEVICE := s110
+#USE_SOFTDEVICE := s210
+
+HOME = /Users/hongbo.yang/
+SDK_PATH = $(HOME)Developer/prjs/embeded/nrf/nrf51_sdk_v6_0_0_43681/nrf51822/
+SOFTDEVICE_BIN_PATH = $(HOME)Developer/prjs/embeded/nrf/s110_nrf51822_7.0.0/s110_nrf51822_7.0.0_softdevice.hex
+BUILD_SCRIPTS_PATH = $(HOME)Developer/prjs/embeded/prjs/nrf51822/build_scripts/
+TEMPLATE_PATH = $(BUILD_SCRIPTS_PATH)
+
+C_SOURCE_FILES += main.c
+
+OUTPUT_FILENAME := main
+
+include $(TEMPLATE_PATH)Makefile.common
+
