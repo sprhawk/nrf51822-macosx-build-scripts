@@ -16,12 +16,12 @@ ifeq ($(LINKER_SCRIPT),)
 	ifeq ($(USE_SOFTDEVICE), S110)
 		LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110_$(DEVICE_VARIANT).ld
 		OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s110_$(DEVICE_VARIANT)
-        STARTADDRESS = 0x14000
+        STARTADDRESS = 0x16000
 	else
 		ifeq ($(USE_SOFTDEVICE), S210)
 			LINKER_SCRIPT = gcc_$(DEVICESERIES)_s210_$(DEVICE_VARIANT).ld
 			OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s210_$(DEVICE_VARIANT)
-            STARTADDRESS = 0x14000
+            STARTADDRESS = 0x16000
 		else
 			LINKER_SCRIPT = gcc_$(DEVICESERIES)_blank_$(DEVICE_VARIANT).ld
 			OUTPUT_FILENAME := $(OUTPUT_FILENAME)_$(DEVICE_VARIANT)
@@ -175,7 +175,7 @@ w4 0x4001e50c,1 # start erasing all \n\
 sleep 1000 \n\
 w4 0x4001e514,1 # start erasing UICR \n\
 sleep 500 \n\
-w4 0x10001000, 0x14000 # write code region size \n\
+w4 0x10001000, $(STARTADDRESS) # write code region size \n\
 sleep 1000 \n\
 w4 0x4001e504,1 \n\
 sleep 1000 \n\
