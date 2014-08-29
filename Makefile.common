@@ -69,7 +69,35 @@ ASMFLAGS += -x assembler-with-cpp
  
 INCLUDEPATHS += -I"$(SDK_PATH)Include"
 INCLUDEPATHS += -I"$(SDK_PATH)Include/gcc"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/console"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/nrf_assert"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/sdk"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/app_common"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/sd_common"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/ble"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/ble/ble_services"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/ble/device_manager"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/ble/device_manager/experimental"
 INCLUDEPATHS += -I"$(SDK_PATH)Include/ext_sensors"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/common"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/common/transport"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/common/struct_ser"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/connectivity"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/connectivity/codecs"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/application/transport"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/application/codecs/common"
+INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/application/codecs/s110/serializers"
+
+ifeq ($(USE_SOFTDEVICE), S110)
+    INCLUDEPATHS += -I"$(SDK_PATH)Include/s110"
+else
+    ifeq ($(USE_SOFTDEVICE), S210)
+        INCLUDEPATHS += -I"$(SDK_PATH)Include/s120"
+    else
+        INCLUDEPATHS += -I"$(SDK_PATH)Include/sdk_soc"
+    endif    
+endif
 
 # Sorting removes duplicates
 BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LISTING_DIRECTORY) )
