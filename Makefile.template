@@ -18,19 +18,19 @@ C_SOURCE_FILES += main.c
 # C_SOURCE_FILES += softdevice_handler.c # need custome defined assert_nrf_callback()
 
 # nrf_delay
-C_SOURCE_FILES += nrf_delay.c
+# C_SOURCE_FILES += nrf_delay.c
 
 # nrf_assert
-C_SOURCE_FILES += nrf_assert.c
+# C_SOURCE_FILES += nrf_assert.c
 
 # nrf_ecb
-C_SOURCE_FILES += nrf_ecb.c
+# C_SOURCE_FILES += nrf_ecb.c
 
 # nrf_nvmc
-C_SOURCE_FILES += nrf_nvmc.c
+# C_SOURCE_FILES += nrf_nvmc.c
 
 # simple_uart
-C_SOURCE_FILES += simple_uart.c
+# C_SOURCE_FILES += simple_uart.c
 
 # app_common
 # C_SOURCE_FILES += app_button.c
