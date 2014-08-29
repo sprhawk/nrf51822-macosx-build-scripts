@@ -3,6 +3,7 @@ nrf51822 build script under MacOSX
 
 Usage:
 ------
+0. download and extract nRF51-SDK 6.0.0 and s110 softdevice 7.0.0 
 
 1. install arm-none-eabi-gcc for MacOSX:
 
@@ -24,3 +25,5 @@ Usage:
 
 9. make flash
 
+
+note: s110 7.0.0 and s110 6.0.0 has different memory layout, 7.0.0 uses 0x16000 as app location while 6.0.0 uses 0x14000, and the build scripts here support 7.0.0 only, if you want to use with 6.0.0. If you want to use 6.0.0, first change Makefile.common, find the STARTADDRESS and change the address, and replace all the .ld files with which included in nRF51-SDK 5.2.0)
