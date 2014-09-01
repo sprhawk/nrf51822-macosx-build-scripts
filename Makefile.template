@@ -18,6 +18,10 @@ TEMPLATE_PATH = $(BUILD_SCRIPTS_PATH)
 # debug: CFLAGS+=-DENABLE_DEBUG_LOG_SUPPORT
 
 C_SOURCE_FILES += main.c
+ifeq ($(MAKECMDGOALS),debug) # template for conditional rules
+# C_SOURCE_FILES += uart.c
+endif
+
 # C_SOURCE_FILES += softdevice_handler.c # need custome defined assert_nrf_callback()
 
 # nrf_delay
