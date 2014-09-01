@@ -124,12 +124,14 @@ vpath %.s $(ASSEMBLER_SOURCE_PATHS)
 -include $(addprefix $(OBJECT_DIRECTORY)/, $(COBJS:.o=.d))
 
 ### Targets
+# debug:    OUTPUT_FILENAME:=$(OUTPUT_FILENAME)-debug
 debug:    CFLAGS += -DDEBUG -g3 -O0
 debug:    ASMFLAGS += -DDEBUG -g3 -O0
 debug:    $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
 
 .PHONY: release
-release: clean
+# release:  OUTPUT_FILENAME:=$(OUTPUT_FILENAME)-release
+release:  clean
 release:  CFLAGS += -DNDEBUG -O3
 release:  ASMFLAGS += -DNDEBUG -O3
 release:  $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
@@ -148,7 +150,7 @@ $(OBJECT_DIRECTORY)/%.o: %.c
 # Build header dependencies
 	$(CC) $(CFLAGS) $(INCLUDEPATHS) -M $< -MF "$(@:.o=.d)" -MT $@
 # Do the actual compilation
-	$(CC) $(CFLAGS) $(INCLUDEPATHS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(INCLUDEPATHS) -g -c -o $@ $<
 
 ## Assemble .s files
 $(OBJECT_DIRECTORY)/%.o: %.s
@@ -168,7 +170,7 @@ $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex: $(OUTPUT_BINARY_DIRECTORY)/$(
 
 ## Default build target
 .PHONY: all
-all: clean release
+all: clean debug
 
 clean:
 	$(RM) $(OUTPUT_BINARY_DIRECTORY)
@@ -268,9 +270,18 @@ $(START_GDB_SERVER_SCRIPT): $(BUILD_DIRECTORIES)
 gdbserver: $(START_GDB_SERVER_SCRIPT)
 	/bin/sh $(START_GDB_SERVER_SCRIPT)
 
-START_GDB_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/gdb.sh
-$(START_GDB_SCRIPT): $(BUILD_DIRECTORIES)
-	echo 'arm-none-eabi-gdb -ex "target remote localhost:2331"' > $(START_GDB_SCRIPT)
+GDB_COMMAND_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/gdbinit
+$(GDB_COMMAND_SCRIPT): debug
+	echo " \n\
+        target remote localhost:2331    \n\
+        mon flash breakpoints = 1       \n\
+        monitor reset                   \n\
+        file $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out  \n\
+        load                            \n\
+        b main                          \n\
+        b app_error_handler             \n\
+        monitor reset                   \n\
+        continue" >> $(GDB_COMMAND_SCRIPT)
 
-gdb: $(START_GDB_SCRIPT)
-	/bin/sh $(START_GDB_SCRIPT)
+gdb: $(GDB_COMMAND_SCRIPT) debug
+	arm-none-eabi-gdb -x $(GDB_COMMAND_SCRIPT)
