@@ -15,7 +15,7 @@ BUILD_SCRIPTS_PATH = $(HOME)Developer/prjs/embeded/prjs/nrf51822/build_scripts/
 TEMPLATE_PATH = $(BUILD_SCRIPTS_PATH)
 
 # CFLAGS += -DBLE_STACK_SUPPORT_REQD
-debug: CFLAGS+=-DENABLE_DEBUG_LOG_SUPPORT
+# debug: CFLAGS+=-DENABLE_DEBUG_LOG_SUPPORT
 
 C_SOURCE_FILES += main.c
 # C_SOURCE_FILES += softdevice_handler.c # need custome defined assert_nrf_callback()
