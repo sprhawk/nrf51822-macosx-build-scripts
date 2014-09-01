@@ -260,3 +260,17 @@ $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink: $(BUILD_DIRECTORIES)
 
 pin-reset: $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink
 	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink; [ "$$?" -eq 1 ]
+
+START_GDB_SERVER_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/start_gdbserver.sh
+$(START_GDB_SERVER_SCRIPT): $(BUILD_DIRECTORIES)
+	echo "JLinkGDBServer -if swd -device nrf51822" > $(START_GDB_SERVER_SCRIPT)
+
+gdbserver: $(START_GDB_SERVER_SCRIPT)
+	/bin/sh $(START_GDB_SERVER_SCRIPT)
+
+START_GDB_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/gdb.sh
+$(START_GDB_SCRIPT): $(BUILD_DIRECTORIES)
+	echo 'arm-none-eabi-gdb -ex "target remote localhost:2331"' > $(START_GDB_SCRIPT)
+
+gdb: $(START_GDB_SCRIPT)
+	/bin/sh $(START_GDB_SCRIPT)
