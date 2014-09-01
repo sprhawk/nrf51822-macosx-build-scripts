@@ -265,7 +265,7 @@ pin-reset: $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink
 
 START_GDB_SERVER_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/start_gdbserver.sh
 $(START_GDB_SERVER_SCRIPT): $(BUILD_DIRECTORIES)
-	echo "JLinkGDBServer -if swd -device nrf51822" > $(START_GDB_SERVER_SCRIPT)
+	echo "JLinkGDBServer -if swd -device nrf51822 -LocalHostOnly" > $(START_GDB_SERVER_SCRIPT)
 
 gdbserver: $(START_GDB_SERVER_SCRIPT)
 	/bin/sh $(START_GDB_SERVER_SCRIPT)
