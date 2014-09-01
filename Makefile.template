@@ -14,6 +14,8 @@ SOFTDEVICE_HEX_PATH = $(HOME)Developer/prjs/embeded/nrf/s110_nrf51822_7.0.0/s110
 BUILD_SCRIPTS_PATH = $(HOME)Developer/prjs/embeded/prjs/nrf51822/build_scripts/
 TEMPLATE_PATH = $(BUILD_SCRIPTS_PATH)
 
+# CFLAGS += _DBLE_STACK_SUPPORT_REQD
+
 C_SOURCE_FILES += main.c
 # C_SOURCE_FILES += softdevice_handler.c # need custome defined assert_nrf_callback()
 
@@ -29,8 +31,24 @@ C_SOURCE_FILES += main.c
 # nrf_nvmc
 # C_SOURCE_FILES += nrf_nvmc.c
 
+# nrf_soc
+# C_SOURCE_FILES += nrf_soc.c
+
+# spi_master
+# C_SOURCE_FILES += spi_master.c
+
+# spi_slave
+# C_SOURCE_FILES += spi_slave.c
+
+# twi_master
+# C_SOURCE_FILES += twi_hw_master.c
+# C_SOURCE_FILES += twi_sw_master.c
+
 # simple_uart
 # C_SOURCE_FILES += simple_uart.c
+
+# sd_common
+# C_SOURCE_FILES += softdevice_handler.c
 
 # app_common
 # C_SOURCE_FILES += app_button.c

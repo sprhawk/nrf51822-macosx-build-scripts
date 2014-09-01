@@ -248,4 +248,15 @@ qc \n\
 flash: $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
 	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/flash.jlink; [ "$$?" -eq 1 ]
 
-.PHONY: erase_all flash_softdevice flash
+$(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink: $(BUILD_DIRECTORIES)
+	echo "\n\
+        r \n\
+        h \n\
+        w4 4001e504 2 \n\
+        w4 40000544 1 \n\
+        r \n\
+        qc \n\
+        " > $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink
+
+pin-reset: $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink
+	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink; [ "$$?" -eq 1 ]
