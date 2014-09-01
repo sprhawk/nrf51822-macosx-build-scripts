@@ -285,3 +285,6 @@ $(GDB_COMMAND_SCRIPT): debug
 
 gdb: $(GDB_COMMAND_SCRIPT) debug
 	arm-none-eabi-gdb -x $(GDB_COMMAND_SCRIPT)
+
+serial:
+	screen /dev/cu.usbmodem1411 38400
