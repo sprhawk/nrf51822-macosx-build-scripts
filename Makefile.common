@@ -1,31 +1,37 @@
 DEVICE := NRF51
 DEVICESERIES := nrf51
 
-SDK_INCLUDE_PATH = $(SDK_PATH)/Include/
-SDK_SOURCE_PATH = $(SDK_PATH)/Source/
-# TEMPLATE_PATH += $(SDK_SOURCE_PATH)/templates/gcc/
-OUTPUT_BINARY_DIRECTORY := _build
+SDK_INCLUDE_PATH = $(SDK_PATH)/Include
+SDK_SOURCE_PATH = $(SDK_PATH)/Source
+# TEMPLATE_PATH += $(SDK_SOURCE_PATH)/templates/gcc
+OUTPUT_BINARY_DIRECTORY := build
 
 ifeq ($(OS),Windows_NT)
-include $(TEMPLATE_PATH)Makefile.windows
+include $(TEMPLATE_PATH)/Makefile.windows
 else
-include $(TEMPLATE_PATH)Makefile.posix
+include $(TEMPLATE_PATH)/Makefile.posix
 endif
 
 ifeq ($(LINKER_SCRIPT),)
-	ifeq ($(USE_SOFTDEVICE), S110)
-		LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110_$(DEVICE_VARIANT).ld
-		OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s110_$(DEVICE_VARIANT)
-        STARTADDRESS = 0x16000
+	ifeq ($(USE_SOFTDEVICE), S110-sd6)
+		LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110-sd6_$(DEVICE_VARIANT).ld
+		OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s110-sd6_$(DEVICE_VARIANT)
+		STARTADDRESS = 0x14000
 	else
-		ifeq ($(USE_SOFTDEVICE), S210)
-			LINKER_SCRIPT = gcc_$(DEVICESERIES)_s210_$(DEVICE_VARIANT).ld
-			OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s210_$(DEVICE_VARIANT)
-            STARTADDRESS = 0x16000
+		ifeq ($(USE_SOFTDEVICE), S110)
+			LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110_$(DEVICE_VARIANT).ld
+			OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s110_$(DEVICE_VARIANT)
+			STARTADDRESS = 0x16000
 		else
-			LINKER_SCRIPT = gcc_$(DEVICESERIES)_blank_$(DEVICE_VARIANT).ld
-			OUTPUT_FILENAME := $(OUTPUT_FILENAME)_$(DEVICE_VARIANT)
-            STARTADDRESS = 0x0
+			ifeq ($(USE_SOFTDEVICE), S120)
+				LINKER_SCRIPT = gcc_$(DEVICESERIES)_s120_$(DEVICE_VARIANT).ld
+				OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s120_$(DEVICE_VARIANT)
+	 			STARTADDRESS = 0x18000
+			else
+				LINKER_SCRIPT = gcc_$(DEVICESERIES)_blank_$(DEVICE_VARIANT).ld
+				OUTPUT_FILENAME := $(OUTPUT_FILENAME)_$(DEVICE_VARIANT)
+				STARTADDRESS = 0x0
+			endif
 		endif
 	endif
 else
@@ -36,19 +42,20 @@ CPU := cortex-m0
 
 # Toolchain commands
 JLINK           := JLinkExe -Device nrf51822 -speed 100 -if swd
-CC       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
-AS       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-as"
-AR       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ar" -r
-LD       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ld"
-NM       		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-nm"
-OBJDUMP  		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objdump"
-OBJCOPY  		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objcopy"
+OPENOCD		:= /usr/local/bin/openocd -f interface/stlink-v2.cfg -c"transport select hla_swd" -f target/nrf51.cfg
+CC			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
+AS			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-as"
+AR			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ar" -r
+LD			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ld"
+NM			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-nm"
+OBJDUMP			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objdump"
+OBJCOPY			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objcopy"
 
-MK 				:= mkdir
+MK				:= mkdir
 RM 				:= rm -rf
 
-OBJECT_DIRECTORY := _build
-LISTING_DIRECTORY := _build
+OBJECT_DIRECTORY := build
+LISTING_DIRECTORY := build
 
 C_SOURCE_FILES += system_$(DEVICESERIES).c
 ASSEMBLER_SOURCE_FILES += gcc_startup_$(DEVICESERIES).s
@@ -57,46 +64,51 @@ ASSEMBLER_SOURCE_FILES += gcc_startup_$(DEVICESERIES).s
 #LDFLAGS += -L"$(GNU_INSTALL_ROOT)/arm-none-eabi/lib/armv6-m"
 #LDFLAGS += -L"$(GNU_INSTALL_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/armv6-m"
 LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
-LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -L $(TEMPLATE_PATH) -T$(LINKER_SCRIPT) 
+LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -L $(TEMPLATE_PATH) -T$(LINKER_SCRIPT)
 
 # Compiler flags
 CFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -D$(DEVICE) -D$(BOARD) -D$(TARGET_CHIP) --std=gnu99
-CFLAGS += -Wall -Werror
+CFLAGS += -Wall
 CFLAGS += -mfloat-abi=soft
 
 # Assembler flags
 ASMFLAGS += -x assembler-with-cpp
- 
-INCLUDEPATHS += -I"$(SDK_PATH)Include"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/gcc"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/console"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/nrf_assert"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/sdk"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/app_common"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/sd_common"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/ble"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/ble/ble_services"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/ble/device_manager"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/ble/device_manager/experimental"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/ext_sensors"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/common"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/common/transport"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/common/struct_ser"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/connectivity"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/connectivity/codecs"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/application/transport"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/application/codecs/common"
-INCLUDEPATHS += -I"$(SDK_PATH)Include/serialization/application/codecs/s110/serializers"
 
-ifeq ($(USE_SOFTDEVICE), S110)
-    INCLUDEPATHS += -I"$(SDK_PATH)Include/s110"
+INCLUDEPATHS += -I./src
+INCLUDEPATHS += -I"$(SDK_PATH)/Include"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/gcc"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/console"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/nrf_assert"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/sdk"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/app_common"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/sd_common"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/ble_services"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/device_manager"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/device_manager/experimental"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/ext_sensors"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common/transport"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common/struct_ser"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/connectivity"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/connectivity/codecs"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/transport"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/common"
+INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/s110/serializers"
+
+ifeq ($(USE_SOFTDEVICE), S110-sd6)
+	INCLUDEPATHS += -I"$(SDK_PATH)/Include/s110"
 else
-    ifeq ($(USE_SOFTDEVICE), S210)
-        INCLUDEPATHS += -I"$(SDK_PATH)Include/s120"
-    else
-        INCLUDEPATHS += -I"$(SDK_PATH)Include/sdk_soc"
-    endif    
+	ifeq ($(USE_SOFTDEVICE), S110)
+		INCLUDEPATHS += -I"$(SDK_PATH)/Include/s110"
+	else
+		ifeq ($(USE_SOFTDEVICE), S120)
+			INCLUDEPATHS += -I"$(SDK_PATH)/Include/s120"
+		else
+			INCLUDEPATHS += -I"$(SDK_PATH)/Include/sdk_soc"
+		endif
+	endif
 endif
 
 # Sorting removes duplicates
@@ -110,8 +122,8 @@ C_SOURCE_FILENAMES = $(notdir $(C_SOURCE_FILES) )
 ASSEMBLER_SOURCE_FILENAMES = $(notdir $(ASSEMBLER_SOURCE_FILES) )
 
 # Make a list of source paths
-C_SOURCE_PATHS += $(SDK_SOURCE_PATH) $(TEMPLATE_PATH) $(wildcard $(SDK_SOURCE_PATH)*/)  $(wildcard $(SDK_SOURCE_PATH)ext_sensors/*/) $(wildcard $(SDK_SOURCE_PATH)ble/*/) $(BUILD_SCRIPTS_PATH)
-ASSEMBLER_SOURCE_PATHS = $(SDK_SOURCE_PATH) $(TEMPLATE_PATH) $(wildcard $(SDK_SOURCE_PATH)*/) $(BUILD_SCRIPTS_PATH)
+C_SOURCE_PATHS += $(SDK_SOURCE_PATH) $(TEMPLATE_PATH) $(wildcard $(SDK_SOURCE_PATH)/*/)  $(wildcard $(SDK_SOURCE_PATH)/ext_sensors/*/) $(wildcard $(SDK_SOURCE_PATH)/ble/*/) $(BUILD_SCRIPTS_PATH) src
+ASSEMBLER_SOURCE_PATHS = $(SDK_SOURCE_PATH) $(TEMPLATE_PATH) $(wildcard $(SDK_SOURCE_PATH)/*/) $(BUILD_SCRIPTS_PATH)
 
 C_OBJECTS = $(addprefix $(OBJECT_DIRECTORY)/, $(C_SOURCE_FILENAMES:.c=.o) )
 ASSEMBLER_OBJECTS = $(addprefix $(OBJECT_DIRECTORY)/, $(ASSEMBLER_SOURCE_FILENAMES:.s=.o) )
@@ -187,13 +199,14 @@ sleep 500 \n\
 r \n\
 q \n\
   " \
-    > $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink 
+    > $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink
 
-erase_all: $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink 
+erase_all: $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink
 	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink; [ "$$?" -eq 1 ]
 
 $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin: $(BUILD_DIRECTORIES)
-	$(OBJCOPY) -I ihex -O binary $(SOFTDEVICE_HEX_PATH) $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
+		$(OBJCOPY) -I ihex -O binary $(SOFTDEVICE_HEX_PATH) $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
+	endif
 
 $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink: $(BUILD_DIRECTORIES)
 	echo " \n\
@@ -213,7 +226,6 @@ verifybin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\", 0x0 \n\
 r \n\
 qc \n\
 " > $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink
-
 
 flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
 	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink; [ "$$?" -eq 1 ]
@@ -235,7 +247,7 @@ w4 0x4001e504,2 # enable erase \n\
         page=`expr $$page + 1`; \
         startaddr=`expr $$startaddr + 1024`; \
         starthexaddr=`printf "0x%x" $$startaddr`; \
-    done 
+    done
 	echo "sleep 1000 \n\
 r \n\
 w4 0x4001e504,1  # enable write \n\
@@ -287,3 +299,15 @@ gdb: $(GDB_COMMAND_SCRIPT) debug
 
 serial:
 	screen /dev/cu.usbmodem1411 38400
+
+openocd_flash: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
+	$(OPENOCD) $(OPENOCD_ARGS) -c "program $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin verify $(STARTADDRESS)"
+
+openocd_flash_softdevice6: $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin
+	$(OPENOCD) -c"init; reset halt; nrf51 mass_erase; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0; reset; shutdown"
+
+$(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin: $(SOFTDEVICE_HEX_PATH)  $(BUILD_DIRECTORIES)
+	$(OBJCOPY) -Iihex -Obinary --only-section .sec3 $< $@
+
+$(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin: $(SOFTDEVICE_HEX_PATH)  $(BUILD_DIRECTORIES)
+	$(OBJCOPY) -Iihex -Obinary --remove-section .sec3 $< $@
