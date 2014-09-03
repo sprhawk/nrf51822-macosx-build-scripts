@@ -270,7 +270,7 @@ gdbserver: $(START_GDB_SERVER_SCRIPT)
 	/bin/sh $(START_GDB_SERVER_SCRIPT)
 
 GDB_COMMAND_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/gdbinit
-$(GDB_COMMAND_SCRIPT): debug
+$(GDB_COMMAND_SCRIPT):
 	echo " \n\
         target remote localhost:2331    \n\
         mon flash breakpoints = 1       \n\
@@ -282,7 +282,7 @@ $(GDB_COMMAND_SCRIPT): debug
         monitor reset                   \n\
         continue" >> $(GDB_COMMAND_SCRIPT)
 
-gdb: $(GDB_COMMAND_SCRIPT) debug
+gdb: $(GDB_COMMAND_SCRIPT)
 	arm-none-eabi-gdb -x $(GDB_COMMAND_SCRIPT)
 
 serial:
