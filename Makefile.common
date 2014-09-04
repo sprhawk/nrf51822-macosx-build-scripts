@@ -13,9 +13,9 @@ include $(TEMPLATE_PATH)/Makefile.posix
 endif
 
 ifeq ($(LINKER_SCRIPT),)
-	ifeq ($(USE_SOFTDEVICE), S110-sd6)
-		LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110-sd6_$(DEVICE_VARIANT).ld
-		OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s110-sd6_$(DEVICE_VARIANT)
+	ifeq ($(USE_SOFTDEVICE), S110-v6)
+		LINKER_SCRIPT = gcc_$(DEVICESERIES)_s110-v6_$(DEVICE_VARIANT).ld
+		OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s110-v6_$(DEVICE_VARIANT)
 		STARTADDRESS = 0x14000
 	else
 		ifeq ($(USE_SOFTDEVICE), S110)
@@ -40,16 +40,23 @@ endif
 
 CPU := cortex-m0
 
+#Flasher selection
+#FLASHER := JLink
+FLASHER := OpenOCD
+
 # Toolchain commands
 JLINK           := JLinkExe -Device nrf51822 -speed 100 -if swd
+#You need to change openOCD clause depending your dongle. I have stlink-v2 and it's working. Jlink will work if you fetch latest trunk from git.
 OPENOCD		:= /usr/local/bin/openocd -f interface/stlink-v2.cfg -c"transport select hla_swd" -f target/nrf51.cfg
+#OPENOCD		:= /usr/local/bin/openocd -f interface/jlink.cfg -c"transport select swd ; adapter_khz 1000 ; adapter_nsrst_delay 10" -f /home/death/de/nrf51.cfg
 CC			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
 AS			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-as"
 AR			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ar" -r
 LD			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ld"
 NM			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-nm"
-OBJDUMP			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objdump"
-OBJCOPY			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objcopy"
+OBJDUMP	:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objdump"
+OBJCOPY	:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-objcopy"
+GDB		:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gdb"
 
 MK				:= mkdir
 RM 				:= rm -rf
@@ -97,7 +104,7 @@ INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/transport"
 INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/common"
 INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/s110/serializers"
 
-ifeq ($(USE_SOFTDEVICE), S110-sd6)
+ifeq ($(USE_SOFTDEVICE), S110-v6)
 	INCLUDEPATHS += -I"$(SDK_PATH)/Include/s110"
 else
 	ifeq ($(USE_SOFTDEVICE), S110)
@@ -186,9 +193,55 @@ all: clean debug
 clean:
 	$(RM) $(OUTPUT_BINARY_DIRECTORY)
 
+# Create binary file from the softdevice 7 hex file
+$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin: $(BUILD_DIRECTORIES)
+		$(OBJCOPY) -I ihex -O binary $(SOFTDEVICE_HEX_PATH) $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
 
+# Create IUCR binary file from the softdevice 6 UICR hex file
+$(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin: $(SOFTDEVICE_HEX_PATH)  $(BUILD_DIRECTORIES)
+	$(OBJCOPY) -Iihex -Obinary --only-section .sec3 $< $@
+
+# Create binary file from the softdevice 6 hex file
+$(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin: $(SOFTDEVICE_HEX_PATH)  $(BUILD_DIRECTORIES)
+	$(OBJCOPY) -Iihex -Obinary --remove-section .sec3 $< $@
+
+#OpenOCD Flasher Scripts
+ifeq ($(FLASHER), OpenOCD)
+flash: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
+	$(OPENOCD) -c "program $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin $(STARTADDRESS) verify"
+
+ifeq ($(USE_SOFTDEVICE), S110-v6)
+flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin
+	$(OPENOCD) -c "init ; reset halt ; nrf51 mass_erase ; sleep 500 ; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000 ; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000 ; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0x0 ; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0; shutdown"
+else
+flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
+	$(OPENOCD) -c "init ; reset halt ; nrf51 mass_erase ; sleep 500 ; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin 0x0 ; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin 0x0 ; mww 0x4001e504 1 ; mww 0x10001000 $(STARTADDRESS) ; mww 0x4001e504 0 ; shutdown"
+endif
+
+erase_all:
+	$(OPENOCD) -c "init ; reset halt ; nrf51 mass_erase ; shutdown"
+
+pinreset:
+	$(OPENOCD) -c "init ; reset halt ; mww 0x4001e504 2 ; mww 0x40000544 1 ; reset ; shutdown"
+
+gdbserver:
+	$(OPENOCD)
+
+GDB_COMMAND_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/gdbinit
+$(GDB_COMMAND_SCRIPT): debug
+	echo -e -n "target remote localhost:3333    \n\
+        monitor reset halt                \n\
+        file $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out  \n\
+        load                            \n\
+        b main                          \n\
+        b app_error_handler             \n\
+        monitor reset                   \n\
+        continue" > $(GDB_COMMAND_SCRIPT)
+
+#JLink Flasher Scripts
+else
 $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink : $(BUILD_DIRECTORIES)
-	echo " \
+	echo "
 r \n\
 h \n\
 w4 0x4001e504,2 # enable erase all \n\
@@ -203,10 +256,6 @@ q \n\
 
 erase_all: $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink
 	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink; [ "$$?" -eq 1 ]
-
-$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin: $(BUILD_DIRECTORIES)
-		$(OBJCOPY) -I ihex -O binary $(SOFTDEVICE_HEX_PATH) $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
-	endif
 
 $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink: $(BUILD_DIRECTORIES)
 	echo " \n\
@@ -292,22 +341,15 @@ $(GDB_COMMAND_SCRIPT): debug
         b main                          \n\
         b app_error_handler             \n\
         monitor reset                   \n\
-        continue" >> $(GDB_COMMAND_SCRIPT)
+        continue" > $(GDB_COMMAND_SCRIPT)
+
+#end of FLASHER selection
+endif
 
 gdb: $(GDB_COMMAND_SCRIPT) debug
-	arm-none-eabi-gdb -x $(GDB_COMMAND_SCRIPT)
+	$(GDB) -x $(GDB_COMMAND_SCRIPT)
 
 serial:
-	screen /dev/cu.usbmodem1411 38400
+	screen /dev/ttyUSB1cu.usbmodem1411 38400
 
-openocd_flash: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
-	$(OPENOCD) $(OPENOCD_ARGS) -c "program $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin verify $(STARTADDRESS)"
 
-openocd_flash_softdevice6: $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin
-	$(OPENOCD) -c"init; reset halt; nrf51 mass_erase; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0; reset; shutdown"
-
-$(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin: $(SOFTDEVICE_HEX_PATH)  $(BUILD_DIRECTORIES)
-	$(OBJCOPY) -Iihex -Obinary --only-section .sec3 $< $@
-
-$(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin: $(SOFTDEVICE_HEX_PATH)  $(BUILD_DIRECTORIES)
-	$(OBJCOPY) -Iihex -Obinary --remove-section .sec3 $< $@
