@@ -1,5 +1,5 @@
-nrf51822 build script under MacOSX
-=================================
+nrf51822 build script under Linux and MacOSX
+============================================
 
 Usage:
 1. make erase_all
@@ -12,17 +12,17 @@ Usage:
 
 5. make pin-reset
 
-6. make serial # will start screen as your terminal
+6. make serial # will start screen as your terminal. You need to adjust for your terminal program
 
 7. make gdbserver # will start gdbserver (-LocalHostOnly)
 
-8. make gdb # will start gdb and set breakpoint at main then start
+8. make gdb # will start gdb and set breakpoint at main and app_error_handler then start
 
 Steps:
 ------
-0. download and extract nRF51-SDK 6.0.0 and s110 softdevice 7.0.0 
+0. download and extract nRF51-SDK 6.0.0 (or 5.1.0) and s110 softdevice 7.0.0 (or 6.0.0)
 
-1. install arm-none-eabi-gcc for MacOSX:
+1. install arm-none-eabi-gcc for Linux or MacOSX:
 
     from: https://launchpad.net/gcc-arm-embedded
 
@@ -42,7 +42,6 @@ Steps:
 
 9. make flash
 
-
-note [1]: s110 7.0.0 and s110 6.0.0 has different memory layout, 7.0.0 uses 0x16000 as app location while 6.0.0 uses 0x14000, and the build scripts here support 7.0.0 only, if you want to use with 6.0.0. If you want to use 6.0.0, first change Makefile.common, find the STARTADDRESS and change the address, and replace all the .ld files with which included in nRF51-SDK 5.2.0)
+note[1]: OpenOCD supported (0.9-trunk advised) if you set FLASHER as OpenOCD at Makefile.common file. You also need to adjust $OPENOCD command for your OpenOCD compatible dongle at same file. You can also flash "softdevice 6.0" with OpenOCD flasher. PS: This patch increases OpenOCD speed by 10 ( http://openocd.zylin.com/#/c/2204/ )
 
 note[2]: Currently JLink (for MacOSX) v4.90b will not require disabling CDC, highly recommend use that new version, that will allow use GDB and virtual com port simutaneously.
