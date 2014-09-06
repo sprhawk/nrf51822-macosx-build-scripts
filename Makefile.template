@@ -1,3 +1,5 @@
+include ../Makefile.config
+
 TARGET_CHIP := NRF51822_QFAA_CA
 BOARD := BOARD_PCA10001
 
@@ -6,15 +8,12 @@ DEVICE_VARIANT := xxaa
 #DEVICE_VARIANT := xxab
 
 USE_SOFTDEVICE := S110
-#USE_SOFTDEVICE := S210
+#USE_SOFTDEVICE := S110-v6
+#USE_SOFTDEVICE := S120
 
-HOME = /Users/hongbo.yang/
-SDK_PATH = $(HOME)Developer/prjs/embeded/nrf/nrf51_sdk_v6_0_0_43681/nrf51822/
-SOFTDEVICE_HEX_PATH = $(HOME)Developer/prjs/embeded/nrf/s110_nrf51822_7.0.0/s110_nrf51822_7.0.0_softdevice.hex
-BUILD_SCRIPTS_PATH = $(HOME)Developer/prjs/embeded/prjs/nrf51822/build_scripts/
-TEMPLATE_PATH = $(BUILD_SCRIPTS_PATH)
 
-# CFLAGS += -DBLE_STACK_SUPPORT_REQD
+
+CFLAGS += -DBLE_STACK_SUPPORT_REQD
 # debug: CFLAGS+=-DENABLE_DEBUG_LOG_SUPPORT
 
 C_SOURCE_FILES += main.c
@@ -107,5 +106,7 @@ endif
 
 OUTPUT_FILENAME := main
 
-include $(TEMPLATE_PATH)Makefile.common
+include $(TEMPLATE_PATH)/Makefile.common
 
+serial:
+	screen /dev/ttyUSB1cu.usbmodem1411 38400
