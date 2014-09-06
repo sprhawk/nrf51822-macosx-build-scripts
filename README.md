@@ -34,7 +34,7 @@ Steps:
 
 4. modify Makefile variable to suit your environment, and include correct Makefile.config
 
-5. make
+5. make (make debug or make release)
 
 6. make erase_all
 
