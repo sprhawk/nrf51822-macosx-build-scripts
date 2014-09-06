@@ -35,15 +35,6 @@ endif
 
 CPU := cortex-m0
 
-#Flasher selection
-#FLASHER := JLink
-FLASHER := OpenOCD
-
-# Toolchain commands
-JLINK           := JLinkExe -Device nrf51822 -speed 100 -if swd
-#You need to change openOCD clause depending your dongle. I have stlink-v2 and it's working. Jlink will work if you fetch latest trunk from git.
-OPENOCD		:= /usr/local/bin/openocd -f interface/stlink-v2.cfg -c"transport select hla_swd" -f target/nrf51.cfg
-#OPENOCD		:= /usr/local/bin/openocd -f interface/jlink.cfg -c"transport select swd ; adapter_khz 1000 ; adapter_nsrst_delay 10" -f /home/death/de/nrf51.cfg
 CC			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-gcc"
 AS			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-as"
 AR			:= "$(GNU_INSTALL_ROOT)/bin/$(GNU_PREFIX)-ar" -r
@@ -70,7 +61,7 @@ LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -L $(TEMPLATE_PATH) -T$(LINKER_SCRIP
 
 # Compiler flags
 CFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -D$(DEVICE) -D$(BOARD) -D$(TARGET_CHIP) --std=gnu99
-CFLAGS += -Wall
+CFLAGS += -Wall -Werror
 CFLAGS += -mfloat-abi=soft
 
 # Assembler flags
@@ -200,155 +191,11 @@ $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin: $(SOFTDEVICE_HEX_PATH)  $(BUILD_
 $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin: $(SOFTDEVICE_HEX_PATH)  $(BUILD_DIRECTORIES)
 	$(OBJCOPY) -Iihex -Obinary --remove-section .sec3 $< $@
 
-#OpenOCD Flasher Scripts
 ifeq ($(FLASHER), OpenOCD)
-flash: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
-	$(OPENOCD) -c "program $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin $(STARTADDRESS) verify"
-
-ifeq ($(USE_SOFTDEVICE), S110-v6)
-flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin
-	$(OPENOCD) -c "init ; reset halt ; nrf51 mass_erase ; sleep 500 ; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000 ; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000 ; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0x0 ; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0; shutdown"
+    include $(BUILD_SCRIPTS_PATH)/Makefile.OpenOCD
 else
-flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
-	$(OPENOCD) -c "init ; reset halt ; nrf51 mass_erase ; sleep 500 ; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin 0x0 ; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin 0x0 ; mww 0x4001e504 1 ; mww 0x10001000 $(STARTADDRESS) ; mww 0x4001e504 0 ; shutdown"
+    include $(BUILD_SCRIPTS_PATH)/Makefile.JLink
 endif
 
-erase_all:
-	$(OPENOCD) -c "init ; reset halt ; nrf51 mass_erase ; shutdown"
-
-pinreset:
-	$(OPENOCD) -c "init ; reset halt ; mww 0x4001e504 2 ; mww 0x40000544 1 ; reset ; shutdown"
-
-gdbserver:
-	$(OPENOCD)
-
-GDB_COMMAND_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/gdbinit
-$(GDB_COMMAND_SCRIPT): debug
-	echo -e -n "target remote localhost:3333    \n\
-        monitor reset halt                \n\
-        file $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out  \n\
-        load                            \n\
-        b main                          \n\
-        b app_error_handler             \n\
-        monitor reset                   \n\
-        continue" > $(GDB_COMMAND_SCRIPT)
-
-#JLink Flasher Scripts
-else
-$(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink : $(BUILD_DIRECTORIES)
-	echo "
-r \n\
-h \n\
-w4 0x4001e504,2 # enable erase all \n\
-w4 0x4001e50c,1 # start erasing \n\
-sleep 1000 \n\
-w4 0x4001e514,1 # start erasing UICR \n\
-sleep 500 \n\
-r \n\
-q \n\
-  " \
-    > $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink
-
-erase_all: $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink
-	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink; [ "$$?" -eq 1 ]
-
-$(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink: $(BUILD_DIRECTORIES)
-	echo " \n\
-r \n\
-h \n\
-w4 0x4001e504,2 # enable erase \n\
-w4 0x4001e50c,1 # start erasing all \n\
-sleep 1000 \n\
-w4 0x4001e514,1 # start erasing UICR \n\
-sleep 500 \n\
-w4 0x10001000, $(STARTADDRESS) # write code region size \n\
-sleep 1000 \n\
-w4 0x4001e504,1 \n\
-sleep 1000 \n\
-loadbin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\", 0x0 \n\
-verifybin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\", 0x0 \n\
-r \n\
-qc \n\
-" > $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink
-
-flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
-	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink; [ "$$?" -eq 1 ]
-
-$(OUTPUT_BINARY_DIRECTORY)/flash.jlink: $(BUILD_DIRECTORIES) $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
-	echo " \n\
-r \n\
-h \n\
-w4 0x4001e504,2 # enable erase \n\
-" > $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
-	binsize=`stat -f %z $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin`;  \
-    starthexaddr=$(STARTADDRESS); \
-	startaddr=`printf "%d" $$starthexaddr`;  \
-	page=0;  \
-	while [ $$binsize -gt 0 ]; \
-    do \
-        echo "w4 0x4001e508, $$starthexaddr # start erasing code region 1 page $$page\n" >> $(OUTPUT_BINARY_DIRECTORY)/flash.jlink ; \
-        binsize=`expr $$binsize - 1024`; \
-        page=`expr $$page + 1`; \
-        startaddr=`expr $$startaddr + 1024`; \
-        starthexaddr=`printf "0x%x" $$startaddr`; \
-    done
-	echo "sleep 1000 \n\
-r \n\
-w4 0x4001e504,1  # enable write \n\
-loadbin \"$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin\", $(STARTADDRESS)\n\
-verifybin \"$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin\", $(STARTADDRESS)\n\
-r \n\
-g \n\
-qc \n\
-" >> $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
-
-flash: $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
-	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/flash.jlink; [ "$$?" -eq 1 ]
-
-$(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink: $(BUILD_DIRECTORIES)
-	echo "\n\
-        r \n\
-        h \n\
-        w4 4001e504 2 \n\
-        w4 40000544 1 \n\
-        r \n\
-        qc \n\
-        " > $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink
-
-pin-reset: $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink
-	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink; [ "$$?" -eq 1 ]
-
-START_GDB_SERVER_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/start_gdbserver.sh
-$(START_GDB_SERVER_SCRIPT): $(BUILD_DIRECTORIES)
-	echo "JLinkGDBServer -if swd -device nrf51822 -LocalHostOnly" > $(START_GDB_SERVER_SCRIPT)
-
-gdbserver: $(START_GDB_SERVER_SCRIPT)
-	/bin/sh $(START_GDB_SERVER_SCRIPT)
-
-GDB_COMMAND_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/gdbinit
-
-$(GDB_COMMAND_SCRIPT): debug
-	echo " \n\
-        target remote localhost:2331    \n\
-        mon flash breakpoints = 1       \n\
-        monitor reset                   \n\
-        file $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out  \n\
-        load                            \n\
-        b main                          \n\
-        b app_error_handler             \n\
-        monitor reset                   \n\
-        continue" >> $(GDB_COMMAND_SCRIPT)
-
-gdb: $(GDB_COMMAND_SCRIPT)
-	arm-none-eabi-gdb -x $(GDB_COMMAND_SCRIPT)
-
-#end of FLASHER selection
-endif
-
-gdb: $(GDB_COMMAND_SCRIPT) debug
-	$(GDB) -x $(GDB_COMMAND_SCRIPT)
-
-serial:
-	screen /dev/ttyUSB1cu.usbmodem1411 38400
 
 

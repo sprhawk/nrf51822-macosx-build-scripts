@@ -1,0 +1,107 @@
+
+$(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink : $(BUILD_DIRECTORIES)
+	echo " \
+r \n\
+h \n\
+w4 0x4001e504,2 # enable erase all \n\
+w4 0x4001e50c,1 # start erasing \n\
+sleep 1000 \n\
+w4 0x4001e514,1 # start erasing UICR \n\
+sleep 500 \n\
+r \n\
+q \n\
+  " \
+    > $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink
+
+erase_all: $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink
+	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/erase_all.jlink; [ "$$?" -eq 1 ]
+
+$(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink: $(BUILD_DIRECTORIES)
+	echo " \n\
+r \n\
+h \n\
+w4 0x4001e504,2 # enable erase \n\
+w4 0x4001e50c,1 # start erasing all \n\
+sleep 1000 \n\
+w4 0x4001e514,1 # start erasing UICR \n\
+sleep 500 \n\
+w4 0x10001000, $(STARTADDRESS) # write code region size \n\
+sleep 1000 \n\
+w4 0x4001e504,1 \n\
+sleep 1000 \n\
+loadbin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\", 0x0 \n\
+verifybin \"$(OUTPUT_BINARY_DIRECTORY)/softdevice.bin\", 0x0 \n\
+r \n\
+qc \n\
+" > $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink
+
+flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
+	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink; [ "$$?" -eq 1 ]
+
+$(OUTPUT_BINARY_DIRECTORY)/flash.jlink: $(BUILD_DIRECTORIES) $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
+	echo " \n\
+r \n\
+h \n\
+w4 0x4001e504,2 # enable erase \n\
+" > $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
+	binsize=`stat -f %z $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin`;  \
+    starthexaddr=$(STARTADDRESS); \
+	startaddr=`printf "%d" $$starthexaddr`;  \
+	page=0;  \
+	while [ $$binsize -gt 0 ]; \
+    do \
+        echo "w4 0x4001e508, $$starthexaddr # start erasing code region 1 page $$page\n" >> $(OUTPUT_BINARY_DIRECTORY)/flash.jlink ; \
+        binsize=`expr $$binsize - 1024`; \
+        page=`expr $$page + 1`; \
+        startaddr=`expr $$startaddr + 1024`; \
+        starthexaddr=`printf "0x%x" $$startaddr`; \
+    done
+	echo "sleep 1000 \n\
+r \n\
+w4 0x4001e504,1  # enable write \n\
+loadbin \"$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin\", $(STARTADDRESS)\n\
+verifybin \"$(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin\", $(STARTADDRESS)\n\
+r \n\
+g \n\
+qc \n\
+" >> $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
+
+flash: $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
+	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/flash.jlink; [ "$$?" -eq 1 ]
+
+$(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink: $(BUILD_DIRECTORIES)
+	echo "\n\
+        r \n\
+        h \n\
+        w4 4001e504 2 \n\
+        w4 40000544 1 \n\
+        r \n\
+        qc \n\
+        " > $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink
+
+pin-reset: $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink
+	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink; [ "$$?" -eq 1 ]
+
+START_GDB_SERVER_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/start_gdbserver.sh
+$(START_GDB_SERVER_SCRIPT): $(BUILD_DIRECTORIES)
+	echo "JLinkGDBServer -if swd -device nrf51822 -LocalHostOnly" > $(START_GDB_SERVER_SCRIPT)
+
+gdbserver: $(START_GDB_SERVER_SCRIPT)
+	/bin/sh $(START_GDB_SERVER_SCRIPT)
+
+GDB_COMMAND_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/gdbinit
+
+$(GDB_COMMAND_SCRIPT): debug
+	echo " \n\
+        target remote localhost:2331    \n\
+        mon flash breakpoints = 1       \n\
+        monitor reset                   \n\
+        file $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out  \n\
+        load                            \n\
+        b main                          \n\
+        b app_error_handler             \n\
+        monitor reset                   \n\
+        continue" >> $(GDB_COMMAND_SCRIPT)
+
+gdb: $(GDB_COMMAND_SCRIPT) debug
+	$(GDB) -x $(GDB_COMMAND_SCRIPT)

@@ -1,0 +1,31 @@
+
+flash: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
+	$(OPENOCD) -c "program $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin $(STARTADDRESS) verify"
+
+ifeq ($(USE_SOFTDEVICE), S110-v6)
+flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin
+	$(OPENOCD) -c "init ; reset halt ; nrf51 mass_erase ; sleep 500 ; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000 ; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_uicr.bin 0x10001000 ; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0x0 ; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice_main.bin 0; shutdown"
+else
+flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
+	$(OPENOCD) -c "init ; reset halt ; nrf51 mass_erase ; sleep 500 ; flash write_image $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin 0x0 ; verify_image $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin 0x0 ; mww 0x4001e504 1 ; mww 0x10001000 $(STARTADDRESS) ; mww 0x4001e504 0 ; shutdown"
+endif
+
+erase_all:
+	$(OPENOCD) -c "init ; reset halt ; nrf51 mass_erase ; shutdown"
+
+pinreset:
+	$(OPENOCD) -c "init ; reset halt ; mww 0x4001e504 2 ; mww 0x40000544 1 ; reset ; shutdown"
+
+gdbserver:
+	$(OPENOCD)
+
+GDB_COMMAND_SCRIPT=$(OUTPUT_BINARY_DIRECTORY)/gdbinit
+$(GDB_COMMAND_SCRIPT): debug
+	echo -e -n "target remote localhost:3333    \n\
+        monitor reset halt                \n\
+        file $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out  \n\
+        load                            \n\
+        b main                          \n\
+        b app_error_handler             \n\
+        monitor reset                   \n\
+        continue" > $(GDB_COMMAND_SCRIPT)

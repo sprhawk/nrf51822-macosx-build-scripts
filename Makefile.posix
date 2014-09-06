@@ -1,4 +1,0 @@
-GNU_INSTALL_ROOT := /opt/gcc-arm-none-eabi-4_8-2014q2
-GNU_VERSION := 4.8.4
-GNU_PREFIX := arm-none-eabi
-

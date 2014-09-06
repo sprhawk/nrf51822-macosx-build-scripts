@@ -1,3 +1,5 @@
+include ../Makefile.config
+
 TARGET_CHIP := NRF51822_QFAA_CA
 BOARD := BOARD_PCA10001
 
@@ -9,20 +11,9 @@ USE_SOFTDEVICE := S110
 #USE_SOFTDEVICE := S110-v6
 #USE_SOFTDEVICE := S120
 
-HOME = ~
 
-#Not that SDK 5.1.0 does NOT work with SoftDevice 7
-#SDK_PATH = $(HOME)/nRF_SDK_v5.1.0.36092/Nordic/nrf51822
-SDK_PATH = $(HOME)/nRF51_SDK_v6.0.0.43681/Nordic/nrf51822
-BUILD_SCRIPTS_PATH = $(HOME)/nrf51822-posix-build-scripts
-TEMPLATE_PATH = $(BUILD_SCRIPTS_PATH)
-ifeq ($(USE_SOFTDEVICE), S110-v6)
-	SOFTDEVICE_HEX_PATH = /run/media/death/F2FS/s110_nrf51822_6_0_0/s110_nrf51822_6.0.0_softdevice.hex
-else
-	SOFTDEVICE_HEX_PATH = /run/media/death/F2FS/s110_nrf51822_7_0_0/s110_nrf51822_7.0.0_softdevice.hex
-endif
 
-# CFLAGS += -DBLE_STACK_SUPPORT_REQD
+CFLAGS += -DBLE_STACK_SUPPORT_REQD
 # debug: CFLAGS+=-DENABLE_DEBUG_LOG_SUPPORT
 
 C_SOURCE_FILES += main.c
@@ -117,3 +108,5 @@ OUTPUT_FILENAME := main
 
 include $(TEMPLATE_PATH)/Makefile.common
 
+serial:
+	screen /dev/ttyUSB1cu.usbmodem1411 38400

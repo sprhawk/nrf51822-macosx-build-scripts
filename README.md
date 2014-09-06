@@ -28,20 +28,22 @@ Steps:
 
 2. create your project file
 
-3. copy Makefile.template as Makefile to your project directory
+3. a. copy Makefile.config.template as Makefie.config to some directory, and change its directories accordingly.
 
-4. modify Makefile variable to suit your environment
+   b. copy Makefile.template as Makefile to your project directory
 
-5. (optional) change Makefile.posix to suit your gcc version
+4. modify Makefile variable to suit your environment, and include correct Makefile.config
 
-6. make
+5. make
 
-7. make erase_all
+6. make erase_all
 
-8. make flash_softdevice
+7. make flash_softdevice
 
-9. make flash
+8. make flash
 
 note[1]: OpenOCD supported (0.9-trunk advised) if you set FLASHER as OpenOCD at Makefile.common file. You also need to adjust $OPENOCD command for your OpenOCD compatible dongle at same file. You can also flash "softdevice 6.0" with OpenOCD flasher. PS: This patch increases OpenOCD speed by 10 ( http://openocd.zylin.com/#/c/2204/ )
 
 note[2]: Currently JLink (for MacOSX) v4.90b will not require disabling CDC, highly recommend use that new version, that will allow use GDB and virtual com port simutaneously.
+
+note[3]: Linux and OpenOCD support was submitted by https://github.com/EUA, if you have any problems please @him or create a issue on his https://github.com/EUA/nrf51822-posix-build-scripts
