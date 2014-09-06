@@ -6,11 +6,6 @@ SDK_SOURCE_PATH = $(SDK_PATH)/Source
 # TEMPLATE_PATH += $(SDK_SOURCE_PATH)/templates/gcc
 OUTPUT_BINARY_DIRECTORY := build
 
-ifeq ($(OS),Windows_NT)
-include $(TEMPLATE_PATH)/Makefile.windows
-else
-include $(TEMPLATE_PATH)/Makefile.posix
-endif
 
 ifeq ($(LINKER_SCRIPT),)
 	ifeq ($(USE_SOFTDEVICE), S110-v6)
