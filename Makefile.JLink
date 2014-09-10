@@ -38,7 +38,9 @@ qc \n\
 flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
 	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink; [ "$$?" -eq 1 ]
 
-$(OUTPUT_BINARY_DIRECTORY)/flash.jlink: $(BUILD_DIRECTORIES) $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
+
+# every time the built binary file may vary, so it had better re-generate new jlink script file
+flash: $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
 	echo " \n\
 r \n\
 h \n\
@@ -65,8 +67,6 @@ r \n\
 g \n\
 qc \n\
 " >> $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
-
-flash: $(OUTPUT_BINARY_DIRECTORY)/flash.jlink
 	$(JLINK) -CommanderScript $(OUTPUT_BINARY_DIRECTORY)/flash.jlink; [ "$$?" -eq 1 ]
 
 $(OUTPUT_BINARY_DIRECTORY)/pinreset.jlink: $(BUILD_DIRECTORIES)
