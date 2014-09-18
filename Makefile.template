@@ -1,3 +1,6 @@
+# build scripts come from https://github.com/sprhawk/nrf51822-macosx-build-scripts
+# modifiy Makefile.config.template from build scripts to adapt your environment
+
 include ../Makefile.config
 
 TARGET_CHIP := NRF51822_QFAA_CA
