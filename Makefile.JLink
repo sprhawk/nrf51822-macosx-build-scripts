@@ -98,10 +98,11 @@ $(GDB_COMMAND_SCRIPT): debug
         monitor reset                   \n\
         file $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out  \n\
         load                            \n\
+        set listsize 20                 \n\
         b main                          \n\
         b app_error_handler             \n\
         monitor reset                   \n\
-        continue" >> $(GDB_COMMAND_SCRIPT)
+        continue" > $(GDB_COMMAND_SCRIPT)
 
 gdb: $(GDB_COMMAND_SCRIPT) debug
 	$(GDB) -x $(GDB_COMMAND_SCRIPT)
