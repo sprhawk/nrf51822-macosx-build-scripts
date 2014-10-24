@@ -41,3 +41,7 @@ JLINK           := JLinkExe -Device nrf51822 -speed 100 -if swd
 #You need to change openOCD clause depending your dongle. I have stlink-v2 and it's working. Jlink will work if you fetch latest trunk from git.
 OPENOCD		:= /usr/local/bin/openocd -f interface/stlink-v2.cfg -c"transport select hla_swd" -f target/nrf51.cfg
 #OPENOCD		:= /usr/local/bin/openocd -f interface/jlink.cfg -c"transport select swd ; adapter_khz 1000 ; adapter_nsrst_delay 10" -f /home/death/de/nrf51.cfg
+
+serial:
+	screen /dev/ttyUSB1cu.usbmodem1411 38400
+	# screen /dev/cu.usbmodem1411 38400 # device under Mac OSX
