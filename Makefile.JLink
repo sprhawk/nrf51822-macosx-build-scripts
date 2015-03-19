@@ -40,7 +40,7 @@ flash_softdevice: $(OUTPUT_BINARY_DIRECTORY)/flash_softdevice.jlink $(OUTPUT_BIN
 
 
 # every time the built binary file may vary, so it had better re-generate new jlink script file
-flash: $(OUTPUT_BINARY_DIRECTORY)/softdevice.bin
+flash: 
 	echo " \n\
 r \n\
 h \n\
