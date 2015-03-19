@@ -200,6 +200,7 @@ endif
 
 # convert_hex need be provided with INPUT_HEX and STARTADDRESS parameters
 # eg, make flash_hex INPUT_HEX=./app.hex STARTADDRESS=0x34000
+# for now, you need calculate the start address of the hex file by your self.
 convert_hex: $(OUTPUT_BINARY_DIRECTORY)
 	$(OBJCOPY) -I ihex -O binary $(INPUT_HEX) $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
 
