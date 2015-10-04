@@ -53,11 +53,12 @@ LISTING_DIRECTORY := build
 C_SOURCE_FILES += system_$(DEVICESERIES).c
 ASSEMBLER_SOURCE_FILES += gcc_startup_$(DEVICESERIES).s
 
+LINKER_SCRIPTS_PATH_FLAG = $(patsubst %, -L"%", $(TEMPLATE_PATH))
 # Linker flags
 #LDFLAGS += -L"$(GNU_INSTALL_ROOT)/arm-none-eabi/lib/armv6-m"
 #LDFLAGS += -L"$(GNU_INSTALL_ROOT)/lib/gcc/arm-none-eabi/$(GNU_VERSION)/armv6-m"
 LDFLAGS += -Xlinker -Map=$(LISTING_DIRECTORY)/$(OUTPUT_FILENAME).map
-LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -L $(TEMPLATE_PATH) -T$(LINKER_SCRIPT)
+LDFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs $(LINKER_SCRIPTS_PATH_FLAG) -T$(LINKER_SCRIPT)
 
 # Compiler flags
 CFLAGS += -mcpu=$(CPU) -mthumb -mabi=aapcs -D$(DEVICE) -D$(BOARD) -D$(TARGET_CHIP) --std=gnu99
@@ -67,42 +68,43 @@ CFLAGS += -mfloat-abi=soft
 # Assembler flags
 ASMFLAGS += -x assembler-with-cpp
 
-INCLUDEPATHS += -I./src
-INCLUDEPATHS += -I"$(SDK_PATH)/Include"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/gcc"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/console"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/nrf_assert"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/sdk"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/app_common"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/sd_common"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/ble_services"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/device_manager"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/device_manager/experimental"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/ext_sensors"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common/transport"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common/struct_ser"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/connectivity"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/connectivity/codecs"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/transport"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/common"
-INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/s110/serializers"
-
-ifeq ($(USE_SOFTDEVICE), S110-v6)
-	INCLUDEPATHS += -I"$(SDK_PATH)/Include/s110"
-else
-	ifeq ($(USE_SOFTDEVICE), S110)
-		INCLUDEPATHS += -I"$(SDK_PATH)/Include/s110"
-	else
-		ifeq ($(USE_SOFTDEVICE), S120)
-			INCLUDEPATHS += -I"$(SDK_PATH)/Include/s120"
-		else
-			INCLUDEPATHS += -I"$(SDK_PATH)/Include/sdk_soc"
-		endif
-	endif
-endif
+## Moved to Makefile.config
+# INCLUDEPATHS += -I./src
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/gcc"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/console"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/nrf_assert"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/sdk"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/app_common"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/sd_common"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/ble_services"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/device_manager"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/device_manager/experimental"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ext_sensors"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common/transport"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common/struct_ser"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/connectivity"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/connectivity/codecs"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/transport"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/common"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/s110/serializers"
+# 
+# ifeq ($(USE_SOFTDEVICE), S110-v6)
+# 	INCLUDEPATHS += -I"$(SDK_PATH)/Include/s110"
+# else
+# 	ifeq ($(USE_SOFTDEVICE), S110)
+# 		INCLUDEPATHS += -I"$(SDK_PATH)/Include/s110"
+# 	else
+# 		ifeq ($(USE_SOFTDEVICE), S120)
+# 			INCLUDEPATHS += -I"$(SDK_PATH)/Include/s120"
+# 		else
+# 			INCLUDEPATHS += -I"$(SDK_PATH)/Include/sdk_soc"
+# 		endif
+# 	endif
+# endif
 
 # Sorting removes duplicates
 BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LISTING_DIRECTORY) )

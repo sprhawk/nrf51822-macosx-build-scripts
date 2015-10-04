@@ -1,6 +1,13 @@
 nrf51822 build script under Linux and MacOSX
 ============================================
 
+Notes:
+-----
+
+    This HEAD revision has been updated for nRF51 SDK 9.0.0 Softdevice 8.0.0.
+
+    If you need prior to nRF-SDK 6.x, please use branch nrf51sdk6.x
+
 Usage:
 1. make erase_all
 
@@ -20,9 +27,9 @@ Usage:
 
 Steps:
 ------
-0. download and extract nRF51-SDK 6.0.0 (or 5.1.0) and s110 softdevice 7.0.0 (or 6.0.0)
+0. download and extract nRF51-SDK 9.0.0 (now SDK has included hex file of softdevice 8.0.0)
 
-1. install arm-none-eabi-gcc for Linux or MacOSX:
+1. install arm-none-eabi-gcc for Linux or MacOSX: (4.9-2015q3)
 
     from: https://launchpad.net/gcc-arm-embedded
 

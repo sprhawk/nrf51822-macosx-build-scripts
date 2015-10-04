@@ -1,34 +1,94 @@
 # Your SDK Directories
 HOME = ~
-SDK_PATH = $(HOME)Developer/prjs/embeded/nrf/nrf51_sdk_v6_0_0_43681/nrf51822/
-SOFTDEVICE_HEX_PATH = $(HOME)Developer/prjs/embeded/nrf/s110_nrf51822_7.0.0/s110_nrf51822_7.0.0_softdevice.hex
-BUILD_SCRIPTS_PATH = $(HOME)Developer/prjs/embeded/prjs/nrf51822/build_scripts/
-TEMPLATE_PATH = $(BUILD_SCRIPTS_PATH)
 
-# HOME = ~
-#SDK_PATH = $(HOME)/nRF51_SDK_v6.0.0.43681/Nordic/nrf51822
+# SDK 9.0.0
+# Softdevice 8.0.0
+#
+SDK_PATH = $(HOME)Developer/prjs/embeded/nrf/nRF51_SDK_9.0.0_2e23562/components/
+SOFTDEVICE_HEX_PATH = $(HOME)Developer/prjs/embeded/nrf/nRF51_SDK_9.0.0_2e23562/components/softdevice/s110/hex/s110_softdevice.hex
+BUILD_SCRIPTS_PATH = $(HOME)Developer/prjs/embeded/prjs/nrf51822/build_scripts/
+TEMPLATE_PATH = $(HOME)Developer/prjs/embeded/nrf/nRF51_SDK_9.0.0_2e23562/components/softdevice/s110/toolchain/armgcc
+TEMPLATE_PATH += $(HOME)Developer/prjs/embeded/nrf/nRF51_SDK_9.0.0_2e23562/components/toolchain/gcc/
+
+# override LINKER_SCRIPT of Makefile.common
+ifeq ($(USE_SOFTDEVICE), S110)
+	LINKER_SCRIPT = armgcc_s110_nrf51822_$(DEVICE_VARIANT).ld
+	OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s110_$(DEVICE_VARIANT)
+	STARTADDRESS = 0x18000
+else
+	ifeq ($(USE_SOFTDEVICE), S120)
+		LINKER_SCRIPT = armgcc_s120_nrf51822_$(DEVICE_VARIANT).ld
+		OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s120_$(DEVICE_VARIANT)
+		STARTADDRESS = 0x1D000
+	else
+		ifeq ($(USE_SOFTDEVICE), S130)
+			LINKER_SCRIPT = armgcc_s130_nrf51822_$(DEVICE_VARIANT).ld
+			OUTPUT_FILENAME := $(OUTPUT_FILENAME)_s130_$(DEVICE_VARIANT)
+			STARTADDRESS = 0x20000
+		endif
+	endif
+endif
+
+# ALL_DIRS = 
+# C_SOURCE_PATHS += $(sort $(dir $(wildcard $(SDK_PATH)**/**/)))
+# INCLUDEPATHS += $(patsubst %, -I%, $(sort $(dir $(wildcard $(SDK_PATH)**/*.h))))
+#
+C_SOURCE_PATHS += $(sort $(dir $(shell find $(SDK_PATH) -iname "*.c" -print)))
+# search all include path excluding s110 , s120 , s130 , etc
+INCLUDEPATHS += $(patsubst %, -I%, $(sort $(dir $(shell find -E $(SDK_PATH) -iname "*.h" -not -iregex ".*/s[0123]{3}/.*" -not -ipath "*/nrf_soc_nosd/*" -print))))
+INCLUDEPATHS += $(patsubst %, -I%, $(sort $(dir $(shell find $(SDK_PATH) -iname "*.h" -path "*/s110/*" -print))))
+INCLUDEPATHS += -I$(SDK_PATH)../examples/bsp/
+
+## for prior to Softdevice 7.0.0
+# INCLUDEPATHS += -I./src
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/gcc"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/console"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/nrf_assert"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/sdk"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/app_common"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/sd_common"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/ble_services"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/device_manager"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ble/device_manager/experimental"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/ext_sensors"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common/transport"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/common/struct_ser"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/connectivity"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/connectivity/codecs"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/transport"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/common"
+# INCLUDEPATHS += -I"$(SDK_PATH)/Include/serialization/application/codecs/s110/serializers"
+# 
 # ifeq ($(USE_SOFTDEVICE), S110-v6)
-# 	SOFTDEVICE_HEX_PATH = /run/media/death/F2FS/s110_nrf51822_6_0_0/s110_nrf51822_6.0.0_softdevice.hex
+# 	INCLUDEPATHS += -I"$(SDK_PATH)/Include/s110"
 # else
-# 	SOFTDEVICE_HEX_PATH = /run/media/death/F2FS/s110_nrf51822_7_0_0/s110_nrf51822_7.0.0_softdevice.hex
+# 	ifeq ($(USE_SOFTDEVICE), S110)
+# 		INCLUDEPATHS += -I"$(SDK_PATH)/Include/s110"
+# 	else
+# 		ifeq ($(USE_SOFTDEVICE), S120)
+# 			INCLUDEPATHS += -I"$(SDK_PATH)/Include/s120"
+# 		else
+# 			INCLUDEPATHS += -I"$(SDK_PATH)/Include/sdk_soc"
+# 		endif
+# 	endif
 # endif
 
-ifeq ($(OS),Windows_NT)
-    ifeq ($(findstring 86, $(ProgramFiles)), )
-    	PROGFILES := C:/Program Files
-    else
-    	PROGFILES := C:/Program Files (x86)
-    endif
-    
-    GNU_INSTALL_ROOT := $(PROGFILES)/GNU Tools ARM Embedded/4.7 2013q1
-    GNU_VERSION := 4.7.3
-    GNU_PREFIX := arm-none-eabi
-else
-    GNU_INSTALL_ROOT := $(HOME)Developer/prjs/embeded/gcc-arm-none-eabi-4_8-2014q2
-    # GNU_INSTALL_ROOT := /opt/gcc-arm-none-eabi-4_8-2014q2
-    GNU_VERSION := 4.8.4
-    GNU_PREFIX := arm-none-eabi
-endif
+## old softdevice
+# SDK_PATH = $(HOME)Developer/prjs/embeded/nrf/nrf51_sdk_v6_0_0_43681/nrf51822/
+# SOFTDEVICE_HEX_PATH = $(HOME)Developer/prjs/embeded/nrf/s110_nrf51822_7.0.0/s110_nrf51822_7.0.0_softdevice.hex
+# BUILD_SCRIPTS_PATH = $(HOME)Developer/prjs/embeded/prjs/nrf51822/build_scripts/
+# TEMPLATE_PATH = $(BUILD_SCRIPTS_PATH)
+#
+
+GNU_INSTALL_ROOT := $(HOME)Developer/prjs/embeded/gcc-arm-none-eabi-4_9-2015q3
+# GNU_INSTALL_ROOT := $(HOME)Developer/prjs/embeded/gcc-arm-none-eabi-4_8-2014q2
+# GNU_INSTALL_ROOT := /opt/gcc-arm-none-eabi-4_8-2014q2
+GNU_VERSION := 4.9.3
+GNU_PREFIX := arm-none-eabi
 
 
 
@@ -43,5 +103,4 @@ OPENOCD		:= /usr/local/bin/openocd -f interface/stlink-v2.cfg -c"transport selec
 #OPENOCD		:= /usr/local/bin/openocd -f interface/jlink.cfg -c"transport select swd ; adapter_khz 1000 ; adapter_nsrst_delay 10" -f /home/death/de/nrf51.cfg
 
 serial:
-	screen /dev/ttyUSB1cu.usbmodem1411 38400
-	# screen /dev/cu.usbmodem1411 38400 # device under Mac OSX
+	screen /dev/cu.usbserial 38400
