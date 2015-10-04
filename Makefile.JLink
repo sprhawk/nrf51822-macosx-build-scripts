@@ -24,7 +24,7 @@ w4 0x4001e504,2 # enable erase \n\
 w4 0x4001e50c,1 # start erasing all \n\
 sleep 1000 \n\
 w4 0x4001e514,1 # start erasing UICR \n\
-sleep 500 \n\
+sleep 1000 \n\
 w4 0x10001000, $(STARTADDRESS) # write code region size \n\
 sleep 1000 \n\
 w4 0x4001e504,1 \n\
